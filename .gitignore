@@ -1,0 +1,22 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.swp
+
+# OMC state (Claude Code orchestration)
+.omc/
+
+# Source / reference files duplicated at root — actual deployed copies live in assets/
+/tincan.png
+/lock.png
+/lock (2).png
+/letter.png
+/smile.mp3
+/freesound_community-old-metal-lunch-box-71223.mp3
+
+# Markdown source files superseded by data/ counterparts
+/letterfill.md
+/lyrics.md
+
+# Editor temp
+*~

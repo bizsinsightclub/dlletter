@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0a0807" />
+  <title>마지막 인사</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="stage" aria-live="polite">
+
+    <section id="scene-tincan" class="scene is-active" aria-label="양철 도시락통">
+      <div class="tincan-wrap">
+        <img src="assets/tincan.png" alt="양철 도시락통" class="tincan" draggable="false">
+      </div>
+      <p class="hint hint-tincan">화면을 누르면 열려요 · Click anywhere</p>
+    </section>
+
+    <section id="scene-lock" class="scene" aria-label="자물쇠 비밀번호 입력">
+      <div class="lock-wrap">
+        <img src="assets/lock.png" alt="자물쇠" class="lock" draggable="false">
+        <form class="pwd-panel" role="group" aria-label="4자리 비밀번호" autocomplete="off">
+          <input class="pwd-input" data-i="0" type="tel" inputmode="numeric" maxlength="1" pattern="[0-9]" autocomplete="off" aria-label="첫째 자리">
+          <input class="pwd-input" data-i="1" type="tel" inputmode="numeric" maxlength="1" pattern="[0-9]" autocomplete="off" aria-label="둘째 자리">
+          <input class="pwd-input" data-i="2" type="tel" inputmode="numeric" maxlength="1" pattern="[0-9]" autocomplete="off" aria-label="셋째 자리">
+          <input class="pwd-input" data-i="3" type="tel" inputmode="numeric" maxlength="1" pattern="[0-9]" autocomplete="off" aria-label="넷째 자리">
+        </form>
+      </div>
+      <p class="hint hint-lock">생일 4자리 (MMDD)를 입력하세요</p>
+    </section>
+
+    <section id="scene-postcard" class="scene" aria-label="편지">
+      <button class="ctl ctl-close" type="button" aria-label="처음으로" data-action="reset">↺</button>
+      <div class="postcard-wrap">
+        <div class="postcard">
+          <img src="assets/letter.png" alt="" class="postcard-bg" draggable="false">
+          <span class="from-name" id="from-name"></span>
+          <article class="letter-body" id="letter-body">
+            <h2 class="to-name" id="to-name"></h2>
+            <p class="subtitle" id="subtitle"></p>
+            <p class="body-text" id="body-text"></p>
+          </article>
+        </div>
+        <div class="lyrics" id="lyrics" aria-live="polite">
+          <p class="lyric lyric-prev" id="lyric-prev"></p>
+          <p class="lyric lyric-curr" id="lyric-curr"></p>
+          <p class="lyric lyric-curr-ko" id="lyric-curr-ko"></p>
+          <p class="lyric lyric-next" id="lyric-next"></p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="picker" id="picker" aria-hidden="true">
+    <div class="picker-card" role="dialog" aria-labelledby="picker-title">
+      <h3 class="picker-title" id="picker-title">누구신가요?</h3>
+      <p class="picker-sub">같은 생일이 있어 한 번 더 여쭤봐요.</p>
+      <div class="picker-list" id="picker-list"></div>
+    </div>
+  </div>
+
+  <audio id="sfx-lunchbox" src="assets/lunchbox.mp3" preload="auto" playsinline></audio>
+  <audio id="bgm-smile"    src="assets/smile.mp3"    preload="auto" playsinline></audio>
+
+  <script src="app.js"></script>
+</body>
+</html>

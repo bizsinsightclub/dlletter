@@ -1,0 +1,520 @@
+/* =========================================================
+   lastofdl — 작별 편지 사이트
+   Palette / typography / scenes / dial / postcard / lyrics
+   ========================================================= */
+
+:root {
+  --bg-dark:     #0a0807;
+  --bg:          #1a1410;
+  --paper:       #f4ecd8;
+  --paper-warm:  #e8d9b0;
+  --ink:         #2c1810;
+  --ink-soft:    #5a3f2c;
+  --metal:       #a08060;
+  --metal-glow:  #d4b08a;
+
+  --ease:        cubic-bezier(0.22, 1, 0.36, 1);
+  --t-slow:      1100ms;
+  --t-med:       800ms;
+  --t-fast:      400ms;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--paper);
+  font-family: 'EB Garamond', 'Nanum Myeongjo', serif;
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
+
+/* ---- Stage with grain texture ------------------------------------ */
+
+#stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background:
+    /* table glow directly under the can */
+    radial-gradient(ellipse 36% 14% at 50% 74%, rgba(140, 88, 48, 0.42), transparent 75%),
+    /* warm halo around can */
+    radial-gradient(circle at 50% 44%, rgba(180, 130, 80, 0.20), transparent 58%),
+    /* surface band — darker plane below the midpoint suggests a tabletop */
+    linear-gradient(180deg, #211911 0%, #1a1410 48%, #2a1c12 62%, #1a110a 85%, #0c0805 100%);
+  overflow: hidden;
+  transition: background var(--t-slow) var(--ease);
+}
+
+/* Edge vignette to keep focus center */
+#stage::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 90% 75% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
+  z-index: 0;
+}
+.scene { z-index: 1; }
+
+#stage::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode: overlay;
+}
+
+body.is-postcard #stage {
+  background: var(--bg-dark);
+}
+
+/* ---- Scenes ------------------------------------------------------- */
+
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--t-med) var(--ease),
+              visibility 0s linear var(--t-med);
+  cursor: default;
+}
+
+.scene.is-active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--t-med) var(--ease), visibility 0s linear 0s;
+}
+
+/* ---- Hints -------------------------------------------------------- */
+
+.hint {
+  position: absolute;
+  bottom: 8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: rgba(244, 236, 216, 0.55);
+  opacity: 0;
+  animation: hint-in 1.5s var(--ease) forwards;
+  animation-delay: 3s;
+  white-space: nowrap;
+}
+
+@keyframes hint-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ---- Scene 1: Tin Can -------------------------------------------- */
+
+#scene-tincan { cursor: pointer; }
+
+.tincan-wrap {
+  position: relative;
+  width: min(80vw, 640px);
+  aspect-ratio: 4 / 3;
+  transform-origin: 50% 70%;
+  transition: transform var(--t-slow) var(--ease);
+}
+
+.tincan {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 4px 2px rgba(0,0,0,0.35))
+    drop-shadow(0 22px 28px rgba(0,0,0,0.6));
+  animation: tincan-float 6s ease-in-out infinite;
+}
+
+@keyframes tincan-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* Approach feel: gentle scale-up + fade out, NOT a fake zoom-into-lock */
+body.is-zooming .tincan-wrap {
+  transform: scale(1.35) translateY(-3%);
+  opacity: 0;
+  transition: transform 1100ms var(--ease), opacity 900ms var(--ease);
+}
+body.is-zooming .hint-tincan { opacity: 0; transition: opacity 200ms; }
+
+/* ---- Scene 2: Lock & Dial ---------------------------------------- */
+
+.lock-wrap {
+  position: relative;
+  width: min(82vw, 620px);
+  /* Match lock.png native ratio (≈4:3) so the panel can land exactly on the dial */
+  aspect-ratio: 4 / 3;
+  transform: scale(0.92);
+  opacity: 0;
+  transition: transform var(--t-slow) var(--ease), opacity var(--t-med) var(--ease);
+}
+#scene-lock.is-active .lock-wrap {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.lock {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 30px rgba(0,0,0,0.6));
+  transition: transform 900ms var(--ease);
+}
+
+/* Shake only the password panel; use margin so transform (centering) stays intact */
+.lock-wrap.is-shake .pwd-panel { animation: pwd-shake 0.36s ease-out; }
+.lock-wrap.is-shake .pwd-input  { border-color: #a8553a; }
+
+@keyframes pwd-shake {
+  0%, 100% { margin-left: 0; }
+  20%      { margin-left: -7px; }
+  40%      { margin-left:  6px; }
+  60%      { margin-left: -4px; }
+  80%      { margin-left:  3px; }
+}
+
+/* Panel positioned exactly on top of the 4-digit dial in lock.png */
+.pwd-panel {
+  position: absolute;
+  top: 57%;
+  left: 55%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 4px;
+  padding: 7px 9px;
+  background: linear-gradient(180deg, rgba(20,14,10,0.92) 0%, rgba(8,5,3,0.95) 100%);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(212, 176, 138, 0.18),
+    inset 0 -1px 0 rgba(0,0,0,0.6),
+    0 6px 14px rgba(0,0,0,0.5);
+  transition: opacity 500ms var(--ease), transform 500ms var(--ease);
+}
+
+.pwd-input {
+  width: 38px;
+  height: 54px;
+  text-align: center;
+  background: linear-gradient(180deg, #f0e3c4 0%, #d8c69b 55%, #b39867 100%);
+  border: 1px solid #6b5230;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -3px 6px rgba(0,0,0,0.22);
+  font-family: 'EB Garamond', serif;
+  font-weight: 500;
+  font-size: 26px;
+  color: var(--ink);
+  outline: none;
+  padding: 0;
+  caret-color: transparent;
+  -moz-appearance: textfield;
+}
+.pwd-input::-webkit-outer-spin-button,
+.pwd-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.pwd-input:focus {
+  border-color: var(--metal-glow);
+  box-shadow:
+    0 0 0 2px rgba(212, 176, 138, 0.55),
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -3px 6px rgba(0,0,0,0.22);
+}
+
+/* Unlock: panel fades cleanly; lock stays upright */
+.lock-wrap.is-opening .pwd-panel {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.94);
+  pointer-events: none;
+}
+.lock-wrap.is-opening .lock {
+  transform: translateY(6px) scale(0.985);
+  filter: drop-shadow(0 22px 36px rgba(0,0,0,0.7));
+  transition: transform 700ms var(--ease), filter 700ms var(--ease);
+}
+
+/* Quick fade-to-dark during the unlock window */
+body.is-unlocking #scene-lock { opacity: 0.08; transition: opacity 600ms ease-in; }
+body.is-unlocking #stage      { background: #000; transition: background 600ms ease-in; }
+
+/* ---- Scene 3: Postcard ------------------------------------------- */
+
+#scene-postcard {
+  background: var(--bg-dark);
+}
+
+.postcard-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 4vh, 48px);
+  width: 100%;
+  max-height: 100vh;
+  padding: 4vh 4vw;
+}
+
+.postcard {
+  position: relative;
+  width: min(85vw, 660px);
+  max-height: 62vh;
+  aspect-ratio: 13 / 9;
+  transform: rotate(-0.6deg);
+  filter: drop-shadow(0 24px 40px rgba(0,0,0,0.65));
+  flex: 0 0 auto;
+  overflow: hidden;             /* safety net so text never escapes */
+  border-radius: 4px;
+}
+
+.postcard-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Sender name overlaid right after the printed "FROM:" label.
+   Vertical: baseline-aligned with FROM:. Horizontal: just after the colon. */
+.from-name {
+  position: absolute;
+  top: 24.8%;
+  left: 25%;
+  font-family: 'Nanum Myeongjo', serif;
+  font-size: 17px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  z-index: 2;
+}
+
+/* Body area — well inside the cream postcard paper, below header + stamp,
+   with comfortable margin on both sides. Block layout (NOT flex) so
+   scrollHeight measures true content size for auto-fit. */
+.letter-body {
+  position: absolute;
+  top: 32%;
+  left: 14%;
+  right: 14%;
+  bottom: 14%;
+  font-family: 'Nanum Myeongjo', 'EB Garamond', serif;
+  font-size: 18px;              /* auto-fits down via app.js */
+  line-height: 1.5;
+  color: var(--ink);
+  overflow: hidden;
+  word-break: keep-all;
+  letter-spacing: -0.01em;
+}
+
+.to-name {
+  font-family: 'Nanum Myeongjo', serif;
+  font-weight: 700;
+  font-size: 1.3em;
+  margin: 0 0 0.3em;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-style: italic;
+  font-size: 0.88em;
+  color: var(--ink-soft);
+  margin: 0 0 0.7em;
+  line-height: 1.3;
+}
+
+.body-text {
+  font-size: 0.88em;
+  line-height: 1.45;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.letter-body::-webkit-scrollbar { display: none; }
+
+/* ---- Lyrics ------------------------------------------------------- */
+
+.lyrics {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 110px;
+  text-align: center;
+  color: rgba(244, 236, 216, 0.85);
+  pointer-events: none;
+}
+
+.lyric {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  transition: opacity var(--t-fast) var(--ease),
+              transform var(--t-fast) var(--ease),
+              color var(--t-fast) var(--ease);
+}
+
+.lyric-prev, .lyric-next {
+  font-size: 0.95rem;
+  opacity: 0.18;
+  color: rgba(244, 236, 216, 0.6);
+}
+
+.lyric-curr {
+  font-size: 1.4rem;
+  opacity: 1;
+  color: var(--paper);
+  text-shadow: 0 0 18px rgba(212, 176, 138, 0.18);
+}
+
+.lyric-curr-ko {
+  font-family: 'Nanum Myeongjo', serif;
+  font-style: normal;
+  font-size: 0.95rem;
+  opacity: 0.7;
+  color: rgba(244, 236, 216, 0.75);
+}
+
+.lyric.is-entering {
+  transform: translateY(8px);
+  opacity: 0;
+}
+
+/* ---- Controls ---------------------------------------------------- */
+
+.ctl {
+  position: absolute;
+  top: 2.4vh;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(244, 236, 216, 0.18);
+  background: rgba(244, 236, 216, 0.04);
+  color: rgba(244, 236, 216, 0.7);
+  font-size: 18px;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 200ms, color 200ms, transform 200ms;
+  z-index: 10;
+}
+.ctl:hover { background: rgba(244, 236, 216, 0.12); color: var(--paper); transform: scale(1.06); }
+.ctl-close { right: 2.4vh; }
+
+/* ---- Name picker (collision on shared birthdays) ---------------- */
+
+.picker {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 8, 7, 0.78);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 350ms var(--ease);
+}
+.picker.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.picker-card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 28px 32px 32px;
+  min-width: 260px;
+  max-width: 88vw;
+  text-align: center;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 350ms var(--ease);
+}
+.picker.is-open .picker-card { transform: translateY(0) scale(1); }
+
+.picker-title {
+  font-family: 'Nanum Myeongjo', serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin: 0 0 6px;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.picker-sub {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+}
+.picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.picker-btn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(44, 24, 16, 0.25);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+  padding: 10px 18px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 180ms, border-color 180ms;
+  font-family: 'Nanum Myeongjo', serif;
+}
+.picker-btn:hover,
+.picker-btn:focus-visible {
+  background: rgba(160, 128, 96, 0.16);
+  border-color: var(--ink);
+  outline: none;
+}
+
+/* ---- Reduced motion --------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .tincan { animation: none; }
+  body.is-zooming .tincan-wrap { transform: none; }
+  .lock-wrap.is-shake .lock,
+  .lock-wrap.is-shake .pwd-panel { animation: none; }
+  .lock-wrap.is-opening .lock { transition: none; }
+}
+
+/* ---- Mobile tweaks ---------------------------------------------- */
+
+@media (max-width: 480px) {
+  .pwd-input { width: 44px; height: 60px; font-size: 30px; }
+  .pwd-panel { padding: 10px 12px; gap: 6px; }
+  .hint { font-size: 0.9rem; bottom: 5vh; }
+  .letter-body { font-size: 16px; }
+}

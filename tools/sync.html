@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lyric Sync · lastofdl</title>
+  <style>
+    :root {
+      --bg: #1a1410; --paper: #f4ecd8; --ink: #2c1810; --accent: #d4b08a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--paper); font: 14px/1.5 system-ui, sans-serif; }
+    header {
+      position: sticky; top: 0;
+      background: #0e0a08;
+      padding: 12px 20px;
+      border-bottom: 1px solid #2c1810;
+      z-index: 5;
+    }
+    h1 { font-size: 16px; margin: 0 0 6px; color: var(--accent); }
+    .hint { font-size: 12px; color: rgba(244,236,216,0.6); }
+    audio { width: 100%; margin-top: 8px; }
+    main { padding: 16px 20px 60vh; max-width: 920px; margin: 0 auto; }
+    .row {
+      display: grid;
+      grid-template-columns: 70px 1fr 1fr 26px;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(244,236,216,0.06);
+      transition: background 120ms;
+    }
+    .row.is-active {
+      background: rgba(212, 176, 138, 0.16);
+      border-radius: 4px;
+    }
+    .row.is-next {
+      background: rgba(244,236,216,0.04);
+    }
+    .row input.t {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(212,176,138,0.25);
+      border-radius: 3px;
+      padding: 4px 6px;
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+      width: 100%;
+    }
+    .row input.t:focus { outline: none; border-color: var(--accent); }
+    .row .en { font-family: 'EB Garamond', serif; font-style: italic; color: var(--paper); }
+    .row .ko { color: rgba(244,236,216,0.6); font-size: 12px; }
+    .row .mark {
+      background: transparent; border: 1px solid rgba(212,176,138,0.25); color: var(--accent);
+      border-radius: 3px; padding: 2px 6px; cursor: pointer; font-size: 12px;
+    }
+    .row .mark:hover { background: rgba(212,176,138,0.15); }
+    .toolbar { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+    button {
+      background: rgba(212,176,138,0.15);
+      color: var(--accent);
+      border: 1px solid rgba(212,176,138,0.3);
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:hover { background: rgba(212,176,138,0.25); }
+    kbd {
+      background: rgba(244,236,216,0.1);
+      border: 1px solid rgba(244,236,216,0.2);
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+    }
+    #out {
+      width: 100%; min-height: 200px;
+      background: #0e0a08; color: var(--paper);
+      border: 1px solid #2c1810; border-radius: 4px;
+      font-family: ui-monospace, monospace; font-size: 12px;
+      padding: 12px; margin-top: 10px;
+      white-space: pre;
+    }
+    #now {
+      display: inline-block;
+      font-family: ui-monospace, monospace;
+      font-size: 14px;
+      color: var(--accent);
+      min-width: 60px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Lyric Sync — smile.mp3 ↔ lyrics.json</h1>
+    <div class="hint">
+      재생 중 <kbd>Space</kbd>로 다음 라인 마킹. 셀을 클릭해 수동 편집. 현재: <span id="now">0.00</span>s
+      &nbsp;·&nbsp; <button id="dl">JSON 다운로드</button>
+      <button id="reset">전체 초기화</button>
+      <button id="undo">마지막 마킹 취소</button>
+    </div>
+    <audio id="audio" src="../assets/smile.mp3" controls preload="auto"></audio>
+  </header>
+  <main id="list"></main>
+
+  <script>
+    const audio = document.getElementById('audio');
+    const list  = document.getElementById('list');
+    const now   = document.getElementById('now');
+    let data = [];
+    let cursor = 0;       // next line to mark
+    let history = [];     // for undo
+
+    async function load() {
+      const r = await fetch('../data/lyrics.json');
+      data = await r.json();
+      render();
+    }
+
+    function render() {
+      list.innerHTML = '';
+      data.forEach((line, i) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.dataset.i = i;
+        row.innerHTML = `
+          <input class="t" type="number" step="0.01" value="${line.t ?? ''}" placeholder="—" />
+          <div class="en">${escape(line.en)}</div>
+          <div class="ko">${escape(line.ko)}</div>
+          <button class="mark" title="현재 재생 시각으로 마킹">●</button>
+        `;
+        row.querySelector('input.t').addEventListener('change', (e) => {
+          const v = e.target.value;
+          data[i].t = v === '' ? null : parseFloat(v);
+        });
+        row.querySelector('.mark').addEventListener('click', () => {
+          markLine(i);
+        });
+        list.appendChild(row);
+      });
+      updateHighlight();
+    }
+
+    function escape(s) {
+      return (s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    }
+
+    function markLine(i) {
+      history.push({ i, prev: data[i].t });
+      data[i].t = +audio.currentTime.toFixed(2);
+      const input = list.querySelector(`.row[data-i="${i}"] input.t`);
+      if (input) input.value = data[i].t;
+      cursor = i + 1;
+      updateHighlight();
+    }
+
+    function updateHighlight() {
+      list.querySelectorAll('.row').forEach((r) => {
+        r.classList.remove('is-active', 'is-next');
+      });
+      const t = audio.currentTime;
+      let active = -1;
+      for (let i = 0; i < data.length; i++) {
+        if (typeof data[i].t === 'number' && data[i].t <= t) active = i;
+        else break;
+      }
+      if (active >= 0) {
+        const el = list.querySelector(`.row[data-i="${active}"]`);
+        if (el) el.classList.add('is-active');
+      }
+      const next = list.querySelector(`.row[data-i="${cursor}"]`);
+      if (next) {
+        next.classList.add('is-next');
+        next.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+
+    function tick() {
+      now.textContent = audio.currentTime.toFixed(2);
+      updateHighlight();
+      requestAnimationFrame(tick);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (cursor < data.length) markLine(cursor);
+      } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const last = history.pop();
+        if (last) {
+          data[last.i].t = last.prev;
+          render();
+          cursor = last.i;
+          updateHighlight();
+        }
+      }
+    });
+
+    document.getElementById('dl').onclick = () => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'lyrics.json';
+      a.click();
+    };
+
+    document.getElementById('reset').onclick = () => {
+      if (!confirm('모든 타임스탬프를 지울까요?')) return;
+      data.forEach((l) => l.t = null);
+      cursor = 0;
+      history = [];
+      render();
+    };
+
+    document.getElementById('undo').onclick = () => {
+      const last = history.pop();
+      if (last) {
+        data[last.i].t = last.prev;
+        cursor = last.i;
+        render();
+      }
+    };
+
+    load();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
